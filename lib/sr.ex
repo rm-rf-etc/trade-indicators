@@ -25,23 +25,23 @@ defmodule TradeIndicators.SR do
     end
   end
 
-  defp support?([p1, p2, p3, p4, p5]),
-       do: p2.l < p1.l and p3.l < p2.l and p3.l < p4.l and p4.l < p5.l
+  defp support?([b1, b2, b3, b4, b5]),
+       do: b2.l < b1.l and b3.l < b2.l and b3.l < b4.l and b4.l < b5.l
 
-  defp resistance?([p1, p2, p3, p4, p5]),
-       do: p2.h > p1.h and p3.h > p2.h and p3.h > p4.h and p4.h > p5.h
+  defp resistance?([b1, b2, b3, b4, b5]),
+       do: b2.h > b1.h and b3.h > b2.h and b3.h > b4.h and b4.h > b5.h
 
-  defp get_support_area([p1, p2, p3, p4, p5]),
-       do: %{l: p3.l, h: ((p1.h + p2.h + p3.h + p4.h + p5.h) / @fractal_size)}
+  defp get_support_area([_, _, bar, _, _]),
+       do: %{h: min(bar.o, bar.c), l: bar.l}
 
-  defp get_resistance_area([p1, p2, p3, p4, p5]),
-       do: %{h: p3.h, l: ((p1.l + p2.l + p3.l + p4.l + p5.l) / @fractal_size)}
+  defp get_resistance_area([_, _, bar, _, _]),
+       do: %{h: bar.h, l: max(bar.o, bar.c)}
 
   defp avg_bar_height(bar_list),
        do: bar_height_sum(bar_list) / E.count(bar_list)
 
   defp bar_height_sum(bar_list),
-       do: E.reduce(bar_list, 0, fn p, acc -> (p.h - p.l) + acc end)
+       do: E.reduce(bar_list, 0, fn bar, acc -> (bar.h - bar.l) + acc end)
 
   defp filter_levels([], _) do [] end
   defp filter_levels([head|tail], avg_bar_height) do
@@ -63,10 +63,22 @@ defmodule TradeIndicators.SR do
   defp far_from_level?(avg_bar_height, [{:resistance, val}|_tail], {:resistance, cur_val}),
        do: abs(cur_val.h - val.h) > avg_bar_height
 
+  """
 
-  # SR.support_and_resistance_areas([%{l: 1, h: 2}, %{l: 4, h: 6}, %{l: 5, h: 7}, %{l: 4, h: 6}, %{l: 2, h: 3}, %{l: 5, h: 7}, %{l: 8, h: 9}, %{l: 15, h: 16}])
-  #
-  # => [support: %{h: 8.0, l: 2}, resistance: %{h: 7, l: 1.5}]
+  TradeIndicators.SR.support_and_resistance_areas([
+     %{l: 1, o: 2, c: 2, h: 3},
+     %{l: 4, o: 5, c: 5, h: 6},
+     %{l: 5, o: 6, c: 6, h: 7},
+     %{l: 4, o: 5, c: 5, h: 6},
+     %{l: 1, o: 2, c: 2, h: 3},
+     %{l: 5, o: 6, c: 6, h: 7},
+     %{l: 8, o: 9, c: 9, h: 10},
+     %{l: 11, o: 13, c: 13, h: 16}
+  ])
+
+  # => [support: %{h: 2, l: 1}, resistance: %{h: 7, l: 6}]
+
+  """
 
 
 end
